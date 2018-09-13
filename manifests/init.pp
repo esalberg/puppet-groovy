@@ -24,27 +24,35 @@ class groovy (
   validate_string($version)
   validate_string($base_url)
 
-  $groovy_filename = "groovy-binary-${version}.zip"
   $groovy_dir      = "${target}/groovy-${version}"
+
+  case $version {
+    /^1\./,/^2\.[0-3]{1}\./,/^2\.4\.[0-3]{1}$/: {
+      $filename = "groovy-binary-${version}.zip"
+    }
+    default: {
+      $filename = "apache-groovy-binary-${version}.zip"
+    }
+  }
 
   if $manage_target and $manage_unzip {
     $staging_require = [
-      Staging::File[$groovy_filename],
+      Staging::File[$filename],
       File[$target],
       Package['unzip'],
     ]
   } elsif $manage_target {
     $staging_require = [
-      Staging::File[$groovy_filename],
+      Staging::File[$filename],
       File[$target],
     ]
   } elsif $manage_unzip {
     $staging_require = [
-      Staging::File[$groovy_filename],
+      Staging::File[$filename],
       Package['unzip'],
     ]
   } else {
-    $staging_require = Staging::File[$groovy_filename]
+    $staging_require = Staging::File[$filename]
   }
 
   file { '/etc/profile.d/groovy.sh':
@@ -59,8 +67,8 @@ class groovy (
     content => template("${module_name}/groovy.csh.erb"),
   }
 
-  staging::file { $groovy_filename:
-    source  => "${base_url}/${groovy_filename}",
+  staging::file { $filename:
+    source  => "${base_url}/${filename}",
     timeout => $timeout,
   }
 
@@ -74,7 +82,7 @@ class groovy (
     }
   }
 
-  staging::extract { $groovy_filename:
+  staging::extract { $filename:
     target  => $target,
     creates => $groovy_dir,
     require => $staging_require,
